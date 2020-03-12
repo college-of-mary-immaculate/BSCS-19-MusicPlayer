@@ -1,7 +1,7 @@
 # BSCS-19-MusicPlayer
 
 ## Install these modules first using pip install
-_ vlc (if this caused an error, download the vlc player based python's version if it is 32 or 64 bit
+- vlc (if this caused an error, download the vlc player based python's version if it is 32 or 64 bit
 - eyeD3
 
 ## To use the program
