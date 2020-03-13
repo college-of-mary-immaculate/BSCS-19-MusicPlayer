@@ -2,8 +2,6 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import *
 from tkinter.ttk import Progressbar, Style
-from threading import Thread
-#import pygame
 import time
 import eyed3
 import os
@@ -25,11 +23,6 @@ class Player(tk.Frame):
         self.gui()
 
     def gui(self):
-        self.volume = Scale(self.master, bd = 0, orient = VERTICAL, bg = 'gray20', length = 348, fg = 'cyan',
-                            width = 60,activebackground = 'gray45', borderwidth = 0,troughcolor = 'gray25',
-                            highlightbackground = 'gray45', from_ = 100, to = 0, font = ('calibri',10))
-
-        self.volume.place(x = -2, y = 10)
         self.MListframe = Frame(self.master, height = 374, width = 420, borderwidth = 0, bg = 'gray20')
         self.MListframe.place(x = 94, y = 0)
 
@@ -63,18 +56,10 @@ class Player(tk.Frame):
         
         self.progressFrame = Frame(self.playFrame, borderwidth = 0, height = 27, width = 505,bg = 'gray45' )
         self.progressFrame.place(x = 0, y = 0)
-        self.pl_time = Label(self.progressFrame, text = '00:00', fg = 'white',bg = 'gray45', font =('calibri',8))
-        self.pl_time.place(x=97,y=3)
-        self.tl_time = Label(self.progressFrame, text = '00:00', fg = 'white',bg = 'gray45', font =('calibri',8))
-        self.tl_time.place(x=471,y=3)
-        self.pbar = Frame(self.progressFrame,borderwidth = 0, height = 2, width = 331, bg = 'gray60')
-        self.pbar.place(x = 134, y = 11)
-        self.thme = Style()
-        self.thme.theme_use('clam')
-        self.thme.configure("cyanpbar.Horizontal.TProgressbar", troughcolor = 'gray50', background = 'cyan', bordercolor = 'gray50',
-                            lightcolor = 'cyan',darkcolor = 'cyan', borderwidth = 0)
-        self.pbarr = Progressbar(self.pbar,style = "cyanpbar.Horizontal.TProgressbar", length = 331, mode = 'determinate')
-        self.pbarr.place(x = 0, y = 0)
+        self.tl_time = Label(self.progressFrame, text = 'Length: 00:00', fg = 'white',bg = 'gray45', font =('calibri',8))
+        self.tl_time.place(x=431,y=3)
+        self.pbar = Frame(self.progressFrame,borderwidth = 0, height = 2, width = 321, bg = 'gray60')
+        self.pbar.place(x = 100, y = 11)
 
         self.current_songFrame = Frame(self.playFrame, borderwidth = 0, height = 42, width = 508,bg = 'gray45' )
         self.current_songFrame.place(x = 0, y = 20)
@@ -196,7 +181,7 @@ class Player(tk.Frame):
         self.mins = round(self.mins)
         self.secs = round(self.secs)
         print(self.mins, self.secs)
-        self.timeplay = ("{:02d}:{:02d}".format(self.mins,self.secs))
+        self.timeplay = ("Length: {:02d}:{:02d}".format(self.mins,self.secs))
         self.tl_time.config(text = self.timeplay)
 
         self.playMusic = vlc.MediaPlayer(self.pathy)
@@ -205,20 +190,16 @@ class Player(tk.Frame):
         self.pauseplayb.config(text = self.PausePlayIcon, font = ('impact',13))
         self.pauseplayb.place(x = 282, y = -3)
         self.playMusic.play()
-        self.bar()
 
     def Playm(self, event):
         self.ind = self.mlist.index(ACTIVE)
         self.mlist.bind('<Double-Button-1>',self.Stopm)
-        Thread(target = self.proceedPlay).start()
-        Thread(target = self.bar).start()
+        self.proceedPlay()
 
     def Stopm(self,event):
         self.ind = self.mlist.index(ACTIVE)
         self.mlist.bind('<Double-Button-1>',self.Playm)
         self.playMusic.stop()
-        Thread(target = self.proceedPlay).start()
-        Thread(target = self.bar).start()
 
     def Nextbtn(self):
         self.ind += 1
@@ -231,8 +212,7 @@ class Player(tk.Frame):
             self.mlist.selection_set(0)
             self.mlist.selection_set(0)
             self.mlist.activate(0)
-        Thread(target = self.proceedPlay).start()
-        Thread(target = self.bar).start()
+        self.proceedPlay()
 
     def Prevbtn(self):
         self.ind -= 1
@@ -245,8 +225,7 @@ class Player(tk.Frame):
             self.mlist.selection_clear(0, END)
             self.mlist.selection_set(self.ind)
             self.mlist.activate(self.ind)
-        Thread(target = self.proceedPlay).start()
-        Thread(target = self.bar).start()
+        self.proceedPlay()
         
     def pseply(self):
         if self.PausePlayIcon == '▶':
@@ -271,33 +250,7 @@ class Player(tk.Frame):
         except:
             pass
         self.askdirctry()
-    
-    def bar(self):
-
-        self.m = 0
-        self.s = -1
-        self.timePlay = ''
-        while self.timePlay != self.timeplay:
-            if self.s == 59:
-                self.s = -1
-                self.m += 1
-            self.s += 1
-            self.timePlay += ("{:02d}:{:02d}".format(self.m,self.s))
-            self.pl_time.place_forget()
-            self.pl_time.config(text = self.timePlay)
-            self.pl_time.place(x=97,y=3)
-            self.timePlay = ''
-            time.sleep(1)
-  
-        for i in range(0,101,1):
-            self.pbarr['value'] = i
-            self.master.update_idletasks()
-            time.sleep(1)
-
-            self.pbarr.pack(side = LEFT, fill = X, padx = 0)
-        
-    
-
+      
 Player(root).place()
 
 root.mainloop()
