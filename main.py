@@ -1,8 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import *
-from tkinter.ttk import Progressbar, Style
-import time
 import eyed3
 import os
 os.add_dll_directory(r'C:\Program Files\VideoLAN\VLC')
