@@ -21,6 +21,9 @@ A simple music player with pause, play, next and previous functionality.
 - [VLC](https://linuxconfig.org/how-to-play-audio-with-vlc-in-python)
 - [eyeD3](https://eyed3.readthedocs.io/en/latest/)
 - [tkinter](https://www.tutorialspoint.com/python/python_gui_programming.htm)
+- [close running processes](https://stackoverflow.com/questions/111155/how-do-i-handle-the-window-close-event-in-tkinter)
+- [after method](https://www.geeksforgeeks.org/python-after-method-in-tkinter/)
+- [after_cancel method](https://stackoverflow.com/questions/53756018/after-cancel-method-tkinter)
 
 ## Contributing to BSCS-19-MusicPlayer
 - To contribute to BSCS-19-MusicPlayer, make sure to give a star and forked this repository.
