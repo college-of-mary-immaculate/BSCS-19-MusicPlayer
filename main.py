@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import *
+from pydub import AudioSegment
+import random
 import eyed3
 import os
 os.add_dll_directory(r'C:\Program Files\VideoLAN\VLC')
@@ -8,7 +10,7 @@ import vlc
 
 root = tk.Tk()
 root.title("Music Player ♫")
-root.geometry('508x470')
+root.geometry('506x470')
 root.config(bg = 'gray30')
 root.resizable(False,False)
 
@@ -22,10 +24,12 @@ class Player(tk.Frame):
         self.ind = None
         self.pausePlayIcon = '▶'
         self.timeSeconds = None
+        self.duration = None
         self.countSeconds = 0
         self.nextIfDoneHandle = None
+        self.direction = "Down"
 
-        self.bgFrame = Frame(self.master, bg = 'gray20', height = 352, width = 85)
+        self.bgFrame = Frame(self.master, bg = 'gray20', height = 351, width = 85)
         self.bgFrame.place(x= 0, y = 10)
 
         self.seperatorLabel = Label(self.bgFrame, text = ". .", font = ("calibri",45), bg = 'gray20', fg = 'ghostwhite')
@@ -56,8 +60,8 @@ class Player(tk.Frame):
         self.scrollbar = Scrollbar(self.listboxFrame, orient = VERTICAL,bg = 'gray5')
         self.scrollbar.pack(side = 'right', fill = 'y')
 
-        self.musicListBox = Listbox(self.listboxFrame,fg = 'white',bg = 'gray15', font = ('calibri',10),highlightcolor  = 'gray15',
-                             selectbackground = 'cyan4', height = 20,width = 55,bd = 0,yscrollcommand = self.scrollbar.set)
+        self.musicListBox = Listbox(self.listboxFrame,fg = 'white',bg = 'gray15', font = ('calibri',10),highlightthickness = 0,
+                            selectbackground = 'cyan4', height = 20,width = 55,bd = 0,yscrollcommand = self.scrollbar.set)
         self.musicListBox.pack()
 
         self.scrollbar.config(command = self.musicListBox.yview)
@@ -72,7 +76,7 @@ class Player(tk.Frame):
         self.progressFrame.place(x = 0, y = 0)
         
         self.totalTime = Label(self.progressFrame, text = 'Length: 00:00', fg = 'white',bg = 'gray45', font =('calibri',8))
-        self.totalTime.place(x=431,y=3)
+        self.totalTime.place(x=429,y=3)
         
         self.barLine = Frame(self.progressFrame,borderwidth = 0, height = 3, width = 328, bg = 'gray55')
         self.barLine.place(x = 90, y = 11)
@@ -97,15 +101,15 @@ class Player(tk.Frame):
         #self.barLine1.place(x = 345, y = 13)
 
         self.pauseAndPlayButton = Button(self.musicControlsFrame, text = self.pausePlayIcon, font = ('impact',18),fg = 'white', bg = 'gray15',state = DISABLED,
-                           activeforeground = 'cyan4',activebackground = 'gray15',borderwidth = 0, command = self.pseply)
+                        activeforeground = 'cyan4',activebackground = 'gray15',borderwidth = 0, command = self.pseply)
         self.pauseAndPlayButton.place(x = 278, y = -12)
 
         self.prevButton= Button(self.musicControlsFrame, text = '<', font = ('impact',17),fg = 'white', bg = 'gray15',state = DISABLED,
-                           activeforeground = 'cyan4',activebackground = 'gray15',borderwidth = 0, command = self.Prevbtn)
+                        activeforeground = 'cyan4',activebackground = 'gray15',borderwidth = 0, command = self.Prevbtn)
         self.prevButton.place(x = 248, y = -8)
 
         self.nextButton= Button(self.musicControlsFrame, text = '>', font = ('impact',17),fg = 'white', bg = 'gray15',state = DISABLED,
-                           activeforeground = 'cyan4',activebackground = 'gray15',borderwidth = 0, command = self.Nextbtn)
+                        activeforeground = 'cyan4',activebackground = 'gray15',borderwidth = 0, command = self.Nextbtn)
         self.nextButton.place(x = 314, y = -8)
 
         self.musicNoteFrame = Frame(self.master, height = 94, width = 94,borderwidth = 0)
@@ -119,6 +123,8 @@ class Player(tk.Frame):
 
         self.musicCount = Label(self.directoryFrame, text = '0', font = ('calibri', 8), bg = 'gray45', fg = 'white')
         self.musicCount.place(x = 365, y = 6)
+
+        self.tobeEnabledDisabled = [self.pauseAndPlayButton,self.prevButton,self.nextButton]
 
     def askdirctry(self):
         self.MUSICLIST = list()
@@ -134,8 +140,7 @@ class Player(tk.Frame):
             self.directoryLabel.config(text = '← Choose a folder to look for .mp3 and .wav files.')
             self.noMusicLabel.config(text = 'Please choose a folder first!')
             self.musicCount.config(text = '0', fg = 'white')
-            self.tobedisabled = [self.pauseAndPlayButton,self.prevButton,self.nextButton]
-            for y in self.tobedisabled:
+            for y in self.tobeEnabledDisabled:
                 y.config(state = DISABLED)
         else:
             if len(self.folderop) > 55:
@@ -156,8 +161,7 @@ class Player(tk.Frame):
                     self.musicListBox.unbind('<Double-Button-1>')
                     self.folderButton.config(fg = 'white')
                     self.noMusicLabel.config(text = 'No songs found in this folder')
-                    self.tobedisabled = [self.pauseAndPlayButton,self.prevButton,self.nextButton]
-                    for y in self.tobedisabled:
+                    for y in self.tobeEnabledDisabled:
                         y.config(state = DISABLED)
             self.countsm = len(self.MUSICLIST)
             if self.countsm > 999:
@@ -172,63 +176,94 @@ class Player(tk.Frame):
         self.secondsLabel.config(text = "0\n0")
         self.minuteLabel.config(text = "0\n0")
         self.musicListBox.bind('<Double-Button-1>', self.Stopm)
-        self.toBeEnabled = [self.pauseAndPlayButton, self.prevButton,self.nextButton]
-        for x in self.toBeEnabled:
+        for x in self.tobeEnabledDisabled:
             x.config(state = NORMAL)
+
+        self.musicListBox.selection_clear(0, END)
+        self.musicListBox.selection_set(self.ind)
+        self.musicListBox.activate(self.ind)
         
         self.fileChoice = self.MUSICLIST[self.ind]
         self.pathChoice = ("{0}\{1}".format(self.folderop,self.fileChoice))
 
-        if self.fileChoice.endswith(".mp3"):
-            self.MUSIC = eyed3.load(self.pathChoice)
-            try:
-                self.songTitle = self.MUSIC.tag.title
-            except:
-                self.songTitle = None
-            
-            if self.songTitle is None:
-                if len(self.fileChoice) > 50:
-                    self.songTitle = ("{0}...".format(self.fileChoice[:50]))
+        try:
+            if self.fileChoice.endswith(".mp3"):
+                self.MUSIC = eyed3.load(self.pathChoice)
+                try:
+                    self.songTitle = self.MUSIC.tag.title
+                except:
+                    self.songTitle = None
+                
+                if self.songTitle is None:
+                    if len(self.fileChoice) > 50:
+                        self.songTitle = ("{0}...".format(self.fileChoice[:50]))
+                    else:
+                        self.songTitle = self.fileChoice
                 else:
-                    self.songTitle = self.fileChoice
-            else:
+                    if len(self.songTitle) > 50:
+                        self.songTitle = ("{0}...".format(self.songTitle[:50]))
+                self.songName.config(text = self.songTitle)
+
+                try:
+                    self.songArtist = self.MUSIC.tag.artist
+                except:
+                    self.songArtist = None
+                    
+                if self.songArtist is None:
+                        self.songArtist = 'No artist'
+                self.artist.config(text = self.songArtist)
+                self.duration = self.MUSIC.info.time_secs
+
+            elif self.fileChoice.endswith(".wav"):
+                self.songTitle = self.fileChoice
+                
                 if len(self.songTitle) > 50:
                     self.songTitle = ("{0}...".format(self.songTitle[:50]))
-            self.songName.config(text = self.songTitle)
+                self.songName.config(text = self.songTitle)
 
-            try:
-                self.songArtist = self.MUSIC.tag.artist
-            except:
-                self.songArtist = None
-                
-            if self.songArtist is None:
-                    self.songArtist = 'No artist'
-            self.artist.config(text = self.songArtist)
+                self.artist.config(text = "Wav file")
 
-        elif self.fileChoice.endswith(".wav"):
-            self.songTitle = self.fileChoice
+                wavFile = AudioSegment.from_file(self.pathChoice)
+                self.duration = wavFile.duration_seconds
             
-            if len(self.songTitle) > 50:
-                self.songTitle = ("{0}...".format(self.songTitle[:50]))
-            self.songName.config(text = songTitle)
+            
+            self.timeSeconds = int(self.duration)
+            self.mins, self.secs = divmod(self.duration,60)
+            self.mins = round(self.mins)
+            self.secs = round(self.secs)
+            self.minuteSecond = ("Length: {:02d}:{:02d}".format(self.mins,self.secs))
+            self.totalTime.config(text = self.minuteSecond)
 
-            self.artist.config(text = "Wav file")
-
-        self.duration = self.MUSIC.info.time_secs
-        self.timeSeconds = int(self.duration)
-        self.mins, self.secs = divmod(self.duration,60)
-        self.mins = round(self.mins)
-        self.secs = round(self.secs)
-        self.minuteSecond = ("Length: {:02d}:{:02d}".format(self.mins,self.secs))
-        self.totalTime.config(text = self.minuteSecond)
-
-        self.playMusic = vlc.MediaPlayer(self.pathChoice)
-        self.pausePlayIcon = 'I I'
-        self.noteIconLabel.config(fg ='cyan4')
-        self.pauseAndPlayButton.config(text = self.pausePlayIcon, font = ('impact',13))
-        self.pauseAndPlayButton.place(x = 282, y = -3)
-        self.nextIfDone()
-        self.playMusic.play()
+            self.playMusic = vlc.MediaPlayer(self.pathChoice)
+            self.pausePlayIcon = 'I I'
+            self.noteIconLabel.config(fg ='cyan4')
+            self.pauseAndPlayButton.config(text = self.pausePlayIcon, font = ('impact',13))
+            self.pauseAndPlayButton.place(x = 282, y = -3)
+            self.nextIfDone()
+            self.playMusic.play()
+            
+        except:
+            for y in self.tobeEnabledDisabled:
+                y.config(state = DISABLED)
+            self.noteIconLabel.config(fg = 'gray20')
+            self.songName.config(text = "Error while trying to play the file!")
+            self.artist.config(text = "Proceeding to the next song...")
+            if self.direction == "Down":
+                self.ind += 1
+                if self.ind == len(self.MUSICLIST):
+                    self.ind = 0
+                    self.musicListBox.selection_set(0)
+                    self.musicListBox.selection_set(0)
+                    self.musicListBox.activate(0)
+            elif self.direction == "Up":
+                self.ind -= 1
+                if self.ind == -1:
+                    self.ind += len(self.MUSICLIST)
+                    self.musicListBox.selection_clear(0, END)
+                    self.musicListBox.selection_set(self.ind)
+                    self.musicListBox.activate(self.ind)
+            self.direction = "Down"
+            self.master.after(3000,self.proceedPlay)
 
     def Playm(self, event):
         self.ind = self.musicListBox.index(ACTIVE)
@@ -254,16 +289,11 @@ class Player(tk.Frame):
         self.proceedPlay()
 
     def Nextbtn(self):
+        self.direction = "Down"
         self.ind += 1
-        self.musicListBox.selection_clear(0, END)
-        self.musicListBox.selection_set(self.ind)
-        self.musicListBox.activate(self.ind)
         self.playMusic.stop()
         if self.ind == len(self.MUSICLIST):
             self.ind = 0
-            self.musicListBox.selection_set(0)
-            self.musicListBox.selection_set(0)
-            self.musicListBox.activate(0)
         self.countSeconds = 0
         self.m = 0
         self.s = -1
@@ -271,16 +301,11 @@ class Player(tk.Frame):
         self.proceedPlay()
 
     def Prevbtn(self):
+        self.direction = "Up"
         self.ind -= 1
-        self.musicListBox.selection_clear(0, END)
-        self.musicListBox.selection_set(self.ind)
-        self.musicListBox.activate(self.ind)
         self.playMusic.stop()
         if self.ind == -1:
             self.ind += len(self.MUSICLIST)
-            self.musicListBox.selection_clear(0, END)
-            self.musicListBox.selection_set(self.ind)
-            self.musicListBox.activate(self.ind)
         self.countSeconds = 0
         self.m = 0
         self.s = -1
@@ -304,8 +329,7 @@ class Player(tk.Frame):
             self.playMusic.pause()
 
     def stopPlay(self):
-        self.tobedisabled = [self.pauseAndPlayButton,self.prevButton,self.nextButton]
-        for y in self.tobedisabled:
+        for y in self.tobeEnabledDisabled:
             y.config(state = DISABLED)
         try:
             self.countSeconds = 0
@@ -315,6 +339,9 @@ class Player(tk.Frame):
             pass
         self.askdirctry()
 
+    def onShuffle(self):
+        pass
+    
     def nextIfDone(self):
         if self.countSeconds < self.timeSeconds:
             self.countSeconds += 1
